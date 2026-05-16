@@ -18,6 +18,7 @@ void DynamicConnectivity::insert(Vertex u, Vertex v) {
     if (!this->lvls[0]->connected(u, v)) {
         edges[e] = {0, true};
         this->lvls[0]->link(u, v);
+        this->lvls[0]->set_tree_edge_is_at_my_lvl(u, v, true);
     } else {
         edges[e] = {0, false};
         this->lvls[0]->add_non_tree_edge(u, v);
@@ -48,41 +49,37 @@ bool DynamicConnectivity::replace(Vertex u, Vertex v, int lvl) {
     Vertex small = (sz_u < sz_v) ? u : v;
     Vertex large = (sz_u < sz_v) ? v : u;
     if (lvl + 1 < L) {
-        auto tree_edges = this->lvls[lvl]->tree_edges_of(small);
-        for (auto &e : tree_edges) {
+        while (auto e_opt = lvls[lvl]->find_lvl_tree_edge_in_tree(small)) {
+            Edge e = *e_opt;
             auto it = edges.find(e);
-            if (it != edges.end() && it->second.lvl == lvl) {
-                it->second.lvl = lvl + 1;
-                lvls[lvl + 1]->link(e.u, e.v);
-            }
+            lvls[lvl]->set_tree_edge_is_at_my_lvl(e.u, e.v, false);
+            it->second.lvl = lvl + 1;
+            lvls[lvl + 1]->link(e.u, e.v);
+            lvls[lvl + 1]->set_tree_edge_is_at_my_lvl(e.u, e.v, true);
         }
     }
-    std::vector<Edge> promote;
-    auto replacement = lvls[lvl]->scan_non_tree_edges_of_tree(small, [&](Vertex in, Vertex out) -> bool {
-        if (lvls[lvl]->connected(out, large)) return true;
-        promote.push_back(canonical(in, out));
-        return false;
-    });
-    if (lvl + 1 < L) {
-        for (auto &e : promote) {
-            auto it = edges.find(e);
-            if (it != edges.end() && it->second.lvl == lvl) {
-                lvls[lvl]->remove_non_tree_edge(e.u, e.v);
-                lvls[lvl + 1]->add_non_tree_edge(e.u, e.v);
-                it->second.lvl = lvl + 1;
-            }
-        }
-    }
-    if (replacement) {
-        Edge e = *replacement;
+    while (auto edge_opt = lvls[lvl]->find_non_tree_edge_in_tree(small)) {
+        Vertex in = edge_opt->u;
+        Vertex out = edge_opt->v;
+        Edge e = canonical(in, out);
         auto it = edges.find(e);
-        int e_lvl = it->second.lvl;
-        lvls[e_lvl]->remove_non_tree_edge(e.u, e.v);
-        for (int i = 0; i <= e_lvl; ++i) {
-            lvls[i]->link(e.u, e.v);
+        if (lvls[lvl]->connected(out, large)) {
+            int e_lvl = it->second.lvl;
+            lvls[e_lvl]->remove_non_tree_edge(e.u, e.v);
+            for (int i = 0; i <= e_lvl; ++i) {
+                lvls[i]->link(e.u, e.v);
+            }
+            lvls[e_lvl]->set_tree_edge_is_at_my_lvl(e.u, e.v, true);
+            it->second.is_tree_edge = true;
+            return true;
         }
-        it->second.is_tree_edge = true;
-        return true;
+        if (lvl + 1 < L) {
+            lvls[lvl]->remove_non_tree_edge(e.u, e.v);
+            lvls[lvl + 1]->add_non_tree_edge(e.u, e.v);
+            it->second.lvl = lvl + 1;
+        } else {
+            break;
+        }
     }
     if (lvl > 0) {
         return replace(u, v, lvl - 1);

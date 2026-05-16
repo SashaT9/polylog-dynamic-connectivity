@@ -3,6 +3,12 @@
 
 void EulerTourTree::Node::pull() {
     sz = 1 + (child[0] ? child[0]->sz : 0) + (child[1] ? child[1]->sz : 0);
+    non_tree_adj = own_has_nt
+                || (child[0] && child[0]->non_tree_adj)
+                || (child[1] && child[1]->non_tree_adj);
+    lvl_tree_edge = own_is_lvl_edge
+                 || (child[0] && child[0]->lvl_tree_edge)
+                 || (child[1] && child[1]->lvl_tree_edge);
 }
 EulerTourTree::EulerTourTree(int n) : n(n), vertex_node(n) {
     for (int v = 0; v < n; ++v) {
@@ -77,4 +83,52 @@ std::vector<Edge> EulerTourTree::tree_edges_in_tree(Vertex v) {
         cur = splay_tree::successor(cur);
     }
     return res;
+}
+EulerTourTree::Node* EulerTourTree::find_non_tree_adj(Node* n) {
+    if (n->child[0] && n->child[0]->non_tree_adj) {
+        return find_non_tree_adj(n->child[0]);
+    }
+    if (n->child[1] && n->child[1]->non_tree_adj) {
+        return find_non_tree_adj(n->child[1]);
+    }
+    return n;
+}
+void EulerTourTree::set_vertex_has_nt(Vertex v, bool b) {
+    Node* vn = vertex_node[v];
+    splay_tree::splay(vn);
+    vn->own_has_nt = b;
+    vn->pull();
+}
+std::optional<Vertex> EulerTourTree::find_vertex_with_nt(Vertex v) {
+    Node* vn = vertex_node[v];
+    splay_tree::splay(vn);
+    if (!vn->non_tree_adj) return std::nullopt;
+    Node* marker = find_non_tree_adj(vn);
+    return marker->id.u;
+}
+EulerTourTree::Node* EulerTourTree::find_lvl_tree_edge_descent(Node* n) {
+    if (n->child[0] && n->child[0]->lvl_tree_edge) {
+        return find_lvl_tree_edge_descent(n->child[0]);
+    }
+    if (n->child[1] && n->child[1]->lvl_tree_edge) {
+        return find_lvl_tree_edge_descent(n->child[1]);
+    }
+    return n;
+}
+void EulerTourTree::set_edge_is_at_this_lvl(Vertex u, Vertex v, bool b) {
+    Node* uv = edge_node[Edge(u, v)];
+    splay_tree::splay(uv);
+    uv->own_is_lvl_edge = b;
+    uv->pull();
+    Node* vu = edge_node[Edge(v, u)];
+    splay_tree::splay(vu);
+    vu->own_is_lvl_edge = b;
+    vu->pull();
+}
+std::optional<Edge> EulerTourTree::find_lvl_tree_edge_in_tree(Vertex v) {
+    Node* vn = vertex_node[v];
+    splay_tree::splay(vn);
+    if (!vn->lvl_tree_edge) return std::nullopt;
+    Node* en = find_lvl_tree_edge_descent(vn);
+    return canonical(en->id.u, en->id.v);
 }

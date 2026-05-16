@@ -9,6 +9,7 @@ void NaiveForestLvl::link(Vertex u, Vertex v) {
 void NaiveForestLvl::cut(Vertex u, Vertex v) {
     this->tree_adj[u].erase(v);
     this->tree_adj[v].erase(u);
+    tree_edges_at_my_lvl.erase(canonical(u, v));
 }
 bool NaiveForestLvl::connected(Vertex u, Vertex v) {
     auto component = bfs_tree(u);
@@ -25,33 +26,28 @@ void NaiveForestLvl::remove_non_tree_edge(Vertex u, Vertex v) {
     this->non_tree_adj[u].erase(v);
     this->non_tree_adj[v].erase(u);
 }
-std::vector<Edge> NaiveForestLvl::tree_edges_of(Vertex v) {
+void NaiveForestLvl::set_tree_edge_is_at_my_lvl(Vertex u, Vertex v, bool b) {
+    Edge e = canonical(u, v);
+    if (b) tree_edges_at_my_lvl.insert(e);
+    else tree_edges_at_my_lvl.erase(e);
+}
+std::optional<Edge> NaiveForestLvl::find_lvl_tree_edge_in_tree(Vertex v) {
     auto component = bfs_tree(v);
-    std::vector<Edge> edges;
     for (auto u : component) {
         for (auto to : this->tree_adj[u]) {
             if (u < to) {
-                edges.emplace_back(u, to);
+                Edge e(u, to);
+                if (tree_edges_at_my_lvl.count(e)) return e;
             }
         }
     }
-    return edges;
+    return std::nullopt;
 }
-std::optional<Edge> NaiveForestLvl::scan_non_tree_edges_of_tree(Vertex v, std::function<bool(Vertex, Vertex)> stop) {
+std::optional<Edge> NaiveForestLvl::find_non_tree_edge_in_tree(Vertex v) {
     auto component = bfs_tree(v);
-    std::vector<std::pair<Vertex, Vertex>> candidates;
     for (auto u : component) {
         for (auto to : this->non_tree_adj[u]) {
-            if (u < to || component.find(to) == component.end()) {
-                candidates.emplace_back(u, to);
-            }
-        }
-    }
-    for (auto [a, b] : candidates) {
-        auto in = component.find(a) != component.end() ? a : b;
-        auto out = in == a ? b : a;
-        if (stop(in, out)) {
-            return canonical(a, b);
+            return Edge(u, to);
         }
     }
     return std::nullopt;
