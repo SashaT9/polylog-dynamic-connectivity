@@ -49,22 +49,6 @@ Node* root(Node* n) {
     return n;
 }
 template<typename Node>
-Node* leftmost(Node* n) {
-    while (n->child[0]) {
-        n = n->child[0];
-    }
-    return n;
-}
-template<typename Node>
-Node* successor(Node* n) {
-    if (n->child[1]) return leftmost(n->child[1]);
-    Node* cur = n;
-    while (cur->parent && side<Node>(cur) == 1) {
-        cur = cur->parent;
-    }
-    return cur->parent;
-}
-template<typename Node>
 Node* join(Node* A, Node* B) {
     if (!A) return B;
     if (!B) return A;

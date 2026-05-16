@@ -13,8 +13,6 @@ public:
     void cut(Vertex u, Vertex v);
     bool connected(Vertex u, Vertex v);
     int tree_size(Vertex v);
-    std::vector<Vertex> vertices_in_tree(Vertex v);
-    std::vector<Edge> tree_edges_in_tree(Vertex v);
     void set_vertex_has_nt(Vertex v, bool b);
     std::optional<Vertex> find_vertex_with_nt(Vertex v);
     void set_edge_is_at_this_lvl(Vertex u, Vertex v, bool b);

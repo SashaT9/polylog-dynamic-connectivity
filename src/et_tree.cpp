@@ -62,28 +62,6 @@ void EulerTourTree::cut(Vertex u, Vertex v) {
     edge_node.erase(Edge(u, v));
     edge_node.erase(Edge(v, u));
 }
-std::vector<Vertex> EulerTourTree::vertices_in_tree(Vertex v) {
-    Node* vn = vertex_node[v];
-    splay_tree::splay(vn);
-    std::vector<Vertex> res;
-    Node* cur = splay_tree::leftmost(vn);
-    while (cur) {
-        if (cur->id.u == cur->id.v) res.push_back(cur->id.u);
-        cur = splay_tree::successor(cur);
-    }
-    return res;
-}
-std::vector<Edge> EulerTourTree::tree_edges_in_tree(Vertex v) {
-    Node* vn = vertex_node[v];
-    splay_tree::splay(vn);
-    std::vector<Edge> res;
-    Node* cur = splay_tree::leftmost(vn);
-    while (cur) {
-        if (cur->id.u < cur->id.v) res.push_back(cur->id);
-        cur = splay_tree::successor(cur);
-    }
-    return res;
-}
 EulerTourTree::Node* EulerTourTree::find_non_tree_adj(Node* n) {
     if (n->child[0] && n->child[0]->non_tree_adj) {
         return find_non_tree_adj(n->child[0]);
