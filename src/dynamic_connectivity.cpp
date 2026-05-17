@@ -4,12 +4,17 @@
 #include <memory>
 #include <optional>
 
-DynamicConnectivity::DynamicConnectivity(int n) {
+DynamicConnectivity::DynamicConnectivity(int n)
+    : DynamicConnectivity(n, [](int sz) {
+        return std::make_unique<EtForestLvl>(sz);
+      })
+{}
+DynamicConnectivity::DynamicConnectivity(int n, ForestLvlFactory make_lvl) {
     this->n = n;
     this->L = std::log2(n) + 1;
     this->lvls.reserve(this->L);
     for (int i = 0; i < this->L; ++i) {
-        this->lvls.push_back(std::make_unique<EtForestLvl>(n));
+        this->lvls.push_back(make_lvl(n));
     }
 }
 void DynamicConnectivity::insert(Vertex u, Vertex v) {
