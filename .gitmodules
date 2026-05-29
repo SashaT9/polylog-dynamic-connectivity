@@ -1,0 +1,3 @@
+[submodule "hdt-tomtseng"]
+	path = hdt-tomtseng
+	url = https://github.com/tomtseng/dynamic-connectivity-hdt

@@ -16,3 +16,6 @@ add_subdirectory(src)
 
 add_executable(stress_test stress_test.cpp)
 target_link_libraries(stress_test PRIVATE connectivity)
+
+include(cmake/hdt_tomtseng.cmake)
+add_subdirectory(bench)

@@ -111,3 +111,7 @@ compile_commands.json
 Thumbs.db
 
 docs/
+
+# Benchmark data / plots
+*.csv
+*.png
